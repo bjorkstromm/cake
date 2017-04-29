@@ -46,7 +46,7 @@ Setup(context =>
 
 Teardown(context =>
 {
-        Information("Starting Teardown...");
+    Information("Starting Teardown...");
 
     if(context.Successful)
     {
@@ -93,19 +93,6 @@ Task("Clean")
     CleanDirectories(parameters.Paths.Directories.ToClean);
 });
 
-Task("Patch-Project-Json")
-    .IsDependentOn("Clean")
-    .Does(() =>
-{
-    var projects = GetFiles("./src/**/project.json");
-    foreach(var project in projects)
-    {
-        if(!parameters.Version.PatchProjectJson(project)) {
-            Warning("No version specified in {0}.", project.FullPath);
-        }
-    }
-});
-
 Task("Restore-NuGet-Packages")
     .IsDependentOn("Clean")
     .Does(() =>
@@ -142,77 +129,20 @@ Task("Run-Unit-Tests")
     .IsDependentOn("Build")
     .Does(() =>
 {
-    var projects = GetFiles("./src/**/*.Tests.xproj");
+    // context.DotNetCoreTest($"{project.Path.FullPath}/{project.Name}.csproj", new DotNetCoreTestSettings()
+    // {
+    //     Configuration = context.Configuration,
+    //     NoBuild = true,
+    //     Verbose = false
+    // });
+
+    var projects = GetFiles("./src/**/*.Tests.csproj");
     foreach(var project in projects)
     {
-        if(IsRunningOnWindows())
-        {
-            var apiUrl = EnvironmentVariable("APPVEYOR_API_URL");
-            try
-            {
-                if (!string.IsNullOrEmpty(apiUrl))
-                {
-                    // Disable XUnit AppVeyorReporter see https://github.com/cake-build/cake/issues/1200
-                    System.Environment.SetEnvironmentVariable("APPVEYOR_API_URL", null);
-                }
-
-                Action<ICakeContext> testAction = tool => {
-                    tool.DotNetCoreTest(project.GetDirectory().FullPath, new DotNetCoreTestSettings {
-                        Configuration = parameters.Configuration,
-                        NoBuild = true,
-                        Verbose = false,
-                        ArgumentCustomization = args =>
-                            args.Append("-xml").Append(parameters.Paths.Directories.TestResults.CombineWithFilePath(project.GetFilenameWithoutExtension()).FullPath + ".xml")
-                    });};
-
-                if(!parameters.SkipOpenCover)
-                {
-                    OpenCover(testAction,
-                        parameters.Paths.Files.TestCoverageOutputFilePath,
-                        new OpenCoverSettings {
-                            ReturnTargetCodeOffset = 0,
-                            ArgumentCustomization = args => args.Append("-mergeoutput")
-                        }
-                        .WithFilter("+[*]* -[xunit.*]* -[*.Tests]* -[Cake.Testing]* -[Cake.Testing.Xunit]* ")
-                        .ExcludeByAttribute("*.ExcludeFromCodeCoverage*")
-                        .ExcludeByFile("*/*Designer.cs;*/*.g.cs;*/*.g.i.cs"));
-                }
-                else
-                {
-                    testAction(Context);
-                }
-            }
-            finally
-            {
-                if (!string.IsNullOrEmpty(apiUrl))
-                {
-                    System.Environment.SetEnvironmentVariable("APPVEYOR_API_URL", apiUrl);
-                }
-            }
-        }
-        else
-        {
-            var name = project.GetFilenameWithoutExtension();
-            var dirPath = project.GetDirectory().FullPath;
-            var config = parameters.Configuration;
-            var xunit = GetFiles(dirPath + "/bin/" + config + "/net451/*/dotnet-test-xunit.exe").First().FullPath;
-            var testfile = GetFiles(dirPath + "/bin/" + config + "/net451/*/" + name + ".dll").First().FullPath;
-
-            using(var process = StartAndReturnProcess("mono", new ProcessSettings{ Arguments = xunit + " " + testfile }))
-            {
-                process.WaitForExit();
-                if (process.GetExitCode() != 0)
-                {
-                    throw new Exception("Mono tests failed!");
-                }
-            }
-        }
-    }
-
-    // Generate the HTML version of the Code Coverage report if the XML file exists
-    if(FileExists(parameters.Paths.Files.TestCoverageOutputFilePath))
-    {
-        ReportGenerator(parameters.Paths.Files.TestCoverageOutputFilePath, parameters.Paths.Directories.TestResults);
+        StartProcess("dotnet", new ProcessSettings {
+            Arguments = "xunit",
+            WorkingDirectory = project.GetDirectory()
+        });
     }
 });
 
