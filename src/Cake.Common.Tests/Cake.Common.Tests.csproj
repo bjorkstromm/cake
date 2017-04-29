@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <VersionPrefix>0.20.0</VersionPrefix>
-    <TargetFrameworks>net451;netcoreapp1.0</TargetFrameworks>
+    <TargetFrameworks>net452;netcoreapp1.0</TargetFrameworks>
     <PlatformTarget>anycpu</PlatformTarget>
     <AssemblyName>Cake.Common.Tests</AssemblyName>
     <PackageId>Cake.Common.Tests</PackageId>
@@ -48,6 +48,7 @@
     <PackageReference Include="xunit" Version="2.2.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
     <PackageReference Include="NSubstitute" Version="2.0.2" />
+    <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.0-beta1-build3642" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net451' ">
