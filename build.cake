@@ -157,7 +157,6 @@ Task("Copy-Files")
         VersionSuffix = parameters.Version.DotNetAsterix,
         Configuration = parameters.Configuration,
         OutputDirectory = parameters.Paths.Directories.ArtifactsBinNet45,
-        NoBuild = true,
         Verbose = false
     });
 
@@ -166,15 +165,17 @@ Task("Copy-Files")
     {
         Framework = "netcoreapp1.0",
         Configuration = parameters.Configuration,
-        VersionSuffix = "alpha",
         OutputDirectory = parameters.Paths.Directories.ArtifactsBinNetCoreApp10,
-        NoBuild = true,
         Verbose = false
     });
 
     // Copy license
     CopyFileToDirectory("./LICENSE", parameters.Paths.Directories.ArtifactsBinNet45);
     CopyFileToDirectory("./LICENSE", parameters.Paths.Directories.ArtifactsBinNetCoreApp10);
+
+    // Copy Cake.XML (since publish does not do this anymore)
+    CopyFileToDirectory("./src/Cake/bin/" + parameters.Configuration + "/net45/Cake.xml", parameters.Paths.Directories.ArtifactsBinNet45);
+    CopyFileToDirectory("./src/Cake/bin/" + parameters.Configuration + "/netcoreapp1.0/netcoreapp1.0/Cake.xml", parameters.Paths.Directories.ArtifactsBinNetCoreApp10);
 });
 
 Task("Zip-Files")
