@@ -22,6 +22,13 @@
   <!-- StyleCop -->
   <PropertyGroup>
     <CodeAnalysisRuleSet>..\Cake.ruleset</CodeAnalysisRuleSet>
+    <Authors>Patrik Svensson, Mattias Karlsson, Gary Ewan Park, Alistair Chapman, Martin Björkström and contributors</Authors>
+    <Company>Patrik Svensson, Mattias Karlsson, Gary Ewan Park, Alistair Chapman, Martin Björkström and contributors</Company>
+    <PackageLicenseUrl>https://github.com/cake-build/cake/blob/develop/LICENSE</PackageLicenseUrl>
+    <PackageIconUrl>https://raw.githubusercontent.com/cake-build/graphics/master/png/cake-medium.png</PackageIconUrl>
+    <RepositoryUrl>https://github.com/cake-build/cake</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>Cake;Script;Build</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <AdditionalFiles Include="..\stylecop.json" Link="stylecop.json" />
