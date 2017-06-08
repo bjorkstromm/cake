@@ -140,7 +140,7 @@ Task("Run-Unit-Tests")
     foreach(var project in projects)
     {
         var exitCode = StartProcess("dotnet", new ProcessSettings {
-            Arguments = "xunit --no-build -configuration " + parameters.Configuration,
+            Arguments = "xunit --no-build -noshadow -configuration " + parameters.Configuration,
             WorkingDirectory = project.GetDirectory()
         });
 
