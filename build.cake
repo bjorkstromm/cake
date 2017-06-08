@@ -139,10 +139,15 @@ Task("Run-Unit-Tests")
     var projects = GetFiles("./src/**/*.Tests.csproj");
     foreach(var project in projects)
     {
-        StartProcess("dotnet", new ProcessSettings {
-            Arguments = "xunit",
+        var exitCode = StartProcess("dotnet", new ProcessSettings {
+            Arguments = "xunit --no-build -configuration " + parameters.Configuration,
             WorkingDirectory = project.GetDirectory()
         });
+
+        if (exitCode != 0)
+        {
+            throw new Exception(string.Format("dotnet xunit exited with code: {0}", exitCode));
+        }
     }
 });
 
