@@ -20,6 +20,7 @@ using Cake.Core.Scripting;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Emit;
+using Microsoft.CodeAnalysis.Scripting.Hosting;
 
 #if NETCORE
 using System.Runtime.Loader;
@@ -54,54 +55,24 @@ namespace Cake.Scripting.Roslyn
             var options = Microsoft.CodeAnalysis.Scripting.ScriptOptions.Default
                 .AddImports(Namespaces)
                 .AddReferences(References)
-                .AddReferences(ReferencePaths.Select(r => r.FullPath));
+                .AddReferences(ReferencePaths.Select(r => r.FullPath))
+                .WithEmitDebugInformation(true)
+                .WithMetadataResolver(Microsoft.CodeAnalysis.Scripting.ScriptMetadataResolver.Default);
 
             var roslynScript = CSharpScript.Create(code, options, _host.GetType());
 
+            _log.Verbose("Compiling build script for debugging...");
             var compilation = roslynScript.GetCompilation();
-            compilation = compilation.WithOptions(compilation.Options
-                .WithOptimizationLevel(OptimizationLevel.Debug)
-                .WithPlatform(Platform.AnyCpu)
-                .WithOutputKind(OutputKind.DynamicallyLinkedLibrary));
+            var diagnostics = compilation.GetDiagnostics();
 
-            using (var assemblyStream = new MemoryStream())
-            using (var symbolStream = new MemoryStream())
+            if (diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error))
             {
-                _log.Verbose("Compiling build script for debugging...");
-                var emitOptions = new EmitOptions(false, GetDebugFormat());
-                var result = compilation.Emit(assemblyStream, symbolStream, options: emitOptions);
-                if (result.Success)
-                {
-                    // Rewind the streams.
-                    assemblyStream.Seek(0, SeekOrigin.Begin);
-                    symbolStream.Seek(0, SeekOrigin.Begin);
-
-                    var assembly = _loader.LoadFromStream(assemblyStream, symbolStream);
-
-                    var type = assembly.GetType(CompiledType);
-                    var method = type.GetMethod(CompiledMethod, BindingFlags.Static | BindingFlags.Public);
-
-                    var submissionStates = new object[2];
-                    submissionStates[0] = _host;
-
-                    method.Invoke(null, new object[] { submissionStates });
-                }
-                else
-                {
-                    var errors = string.Join(Environment.NewLine, result.Diagnostics.Select(x => x.ToString()));
-                    var message = string.Format(CultureInfo.InvariantCulture, "Error occurred when compiling: {0}", errors);
-                    throw new CakeException(message);
-                }
+                var errors = string.Join(Environment.NewLine, diagnostics.Select(x => x.ToString()));
+                var message = string.Format(CultureInfo.InvariantCulture, "Error occurred when compiling: {0}", errors);
+                throw new CakeException(message);
             }
-        }
 
-        private static DebugInformationFormat GetDebugFormat()
-        {
-#if NETCORE
-            return DebugInformationFormat.PortablePdb;
-#else
-            return DebugInformationFormat.Pdb;
-#endif
+            roslynScript.RunAsync(_host).Wait();
         }
     }
 }
