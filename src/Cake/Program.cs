@@ -72,6 +72,11 @@ namespace Cake
                     builder.RegisterModule(new NuGetModule(configuration));
                     builder.Update(container);
 
+                    // Register the ScriptingModule
+                    builder = new ContainerRegistrar();
+                    builder.RegisterModule(new Scripting.Module.ScriptingModule());
+                    builder.Update(container);
+
                     // Load all modules.
                     var loader = container.Resolve<ModuleLoader>();
                     loader.LoadModules(container, options);
